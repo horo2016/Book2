@@ -5,8 +5,9 @@ import numpy as np
 import argparse
 import os
 import math
+import time 
 path = "./test"
-y_bias = 190
+y_bias = 134
 gray_min = np.array([0, 0, 46])
 gray_max = np.array([180, 43, 255])
 
@@ -30,12 +31,12 @@ right_motor.setVelocity(0.0)
 def goStraight():
     left_motor.setVelocity(0.4)
     right_motor.setVelocity(0.4)
-def turnRight():
-    left_motor.setVelocity(0.1)
-    right_motor.setVelocity(-0.1)
-def turnLeft():
-    left_motor.setVelocity(-0.1)
-    right_motor.setVelocity(0.1)
+def turnRight(w):
+    left_motor.setVelocity(0.2)
+    right_motor.setVelocity(-0.2)
+def turnLeft(w):
+    left_motor.setVelocity(-w)
+    right_motor.setVelocity(w)
 if __name__ == '__main__':
     
     net = cv2.dnn.readNetFromONNX('nvidia.onnx')
@@ -54,7 +55,7 @@ if __name__ == '__main__':
             # # 腐蚀，白区域变小
             # dst = cv2.erode(dst, None, iterations=6)
             #矩阵切片，把需要的东西提取出来
-            hawk = dst[y_bias:256,28:228]
+            hawk = dst[y_bias:200,0:200]
             #cv2.imshow("hawk.jpg",hawk)
     
             #cv2.waitKey(50)
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     
             #srcimg = cv2.normalize(srcimg, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
             t1 = cv2.getTickCount()
-            blob = cv2.dnn.blobFromImage(hawk, scalefactor=1,size= (66, 200),mean=[0.485])
+            blob = cv2.dnn.blobFromImage(hawk)
             net.setInput(blob)
             layer = net.getUnconnectedOutLayersNames()#获取最后一层 
             #layeralls= net.getLayerNames()#获取所有的输出层名称
@@ -89,15 +90,18 @@ if __name__ == '__main__':
             print(label)
             
             feature_map = array_output[0]
-            if(feature_map <= -0.10):
+            print( feature_map)
+            if(feature_map <= 0.500):
                 print("turn right")
-                turnRight()
-            elif(feature_map  > -0.10):
+                turnRight(feature_map)
+                
+            elif((feature_map)  > 0.50 and (feature_map) < 2.0):
                 print("run go Straight ")
                 goStraight()
-            if(feature_map  > 0.00):
+            elif(feature_map  > 2.0):
                 print("turn left ")
-                turnLeft()
-            print( feature_map)
+                turnLeft(feature_map)
+            time.sleep(0.1)
+            
         
  
