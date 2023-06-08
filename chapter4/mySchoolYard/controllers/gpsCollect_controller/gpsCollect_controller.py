@@ -25,7 +25,7 @@ broker = '127.0.0.1'
 port = 1883
 camera_topic = "/camera/collect" #保留
 roads_topic = "/roads/collect" #保留
-
+ 
 client_id = 'python-mqtt-{}'.format(random.randint(0, 1000))
 #控制指令topic 
 cmd_vel_topic = "/cmd/vel"
@@ -66,7 +66,7 @@ back_right_wheel.setVelocity(0.0)
 
 vr =0 
 vl =0
-vel =0.8
+vel =2
 ang =0.1
 start_flg =0
 '''
@@ -137,6 +137,8 @@ def loop():
     g_img =None
     g_img = np.ones((800,800), np.uint8)
     g_img.fill(0)
+    f_index = open("index.csv","a",encoding = "utf - 8")
+    road_file = "roadpoints.txt"
     while robot.step(timestep) != -1:
         
         x=gps.getValues()[0]
@@ -164,6 +166,7 @@ def loop():
             start_x = (init_x +  (pix_di*math.cos(rad)/1.4142135))*100/100
             start_y = (init_y +  (pix_di*math.sin(rad)/1.4142135))*100/100
             print(str(init_x)+" "+str(init_y)+" "+str(start_x)+" "+str(start_y))
+            f_index.write(str(x)+","+str(y)+","+str(start_x)+","+str(start_y)+"\n")
             cv2.line(img,(int(init_x),int(init_y)), (int(start_x),int(start_y)),(255),15)
             cv2.line(g_img,(int(init_x),int(init_y)), (int(start_x),int(start_y)),(255),15)
             #找到临时的道路为白色点位 
@@ -171,6 +174,11 @@ def loop():
             print(idx.shape)
             print(type(idx))
             print(idx[0])
+            response_2d = None
+            response_2d = idx.reshape(-1, idx.shape[-1])
+            with open(road_file, "ab") as f:
+                np.savetxt(f, response_2d, fmt='%d',delimiter=',')  # 整数
+
             #cv2.imshow('img', img)
             #cv2.waitKey(500)
             byteArr = bytearray(idx)#1xN维的数据
@@ -191,6 +199,7 @@ def loop():
             init_x = start_x
             init_y = start_y
         pass
+    f_index.close()
 #作为子线程开启
 th = threading.Thread(target=loop)
 th.setDaemon(True)
